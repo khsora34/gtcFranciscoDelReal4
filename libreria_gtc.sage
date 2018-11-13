@@ -263,6 +263,64 @@ def splitAnyDirectionList(v,P):
         list[subList].append(sortedList[i])
     return list
 
+def polygonization(p):
+    def greaterX(x,y):
+        if x[0] > y[0]:
+            return int(1)
+        elif x[0] == y[0] and x[1] > y[1]:
+            return int(1)
+        else:
+            return int(-1)
+            
+    distributedPoints = splitHorizList(p)
+    orderedList1 = sorted(distributedPoints[0], cmp= greaterX)
+    orderedList2 = sorted(distributedPoints[1], cmp= greaterX)
+    orderedList2.reverse()
+    return orderedList1 + orderedList2
+
+def starPolygonization(p):
+    if len(p) < 3:
+        return
+    rotationalCenter = midPoint(p[0], p[1])
+    #rotationalCenter = circumcenter(p[0], p[1], p[2])
+    return angularSort(p, rotationalCenter)
+
+def clipping(P,r):
+    result = []
+    if P == []:
+        return result
+    list = deepcopy(P) + [P[0]]
+    capturingPolygon = sarea(r[0], r[1], P[0]) >= 0
+    for i in range(len(list)):
+        if capturingPolygon:
+            capturedArea = sarea(r[0], r[1], list[i])
+            if capturedArea >= 0:
+                result.append(list[i])
+            elif capturedArea < 0:
+                # We've moved outside the new polygon.
+                capturingPolygon = False
+                intersection = lineIntersection(r,[list[i-1], list[i]])
+                result.append(intersection)
+        else:
+            capturedArea = sarea(r[0], r[1], list[i])
+            if capturedArea > 0:
+                # We've moved inside the new polygon.
+                capturingPolygon = True
+                intersection = lineIntersection(r,[list[i-1], list[i]])
+                result.append(intersection)
+                result.append(list[i])
+            elif capturedArea == 0:
+                result.append(list[i])
+                #No mode switching because maybe next time we'll move outside the polygon.
+    return result
+
+def kernel(p):
+    C=deepcopy(p)
+    for i in range(len(p)):
+        C=clipping(C,[p[i-1],p[i]])
+
+    return C
+
 def boundingBox(P):
     maxRightIndex = maxAbcisa(P); maxRight = P[maxRightIndex]
     maxLeftIndex = minAbcisa(P); maxLeft = P[maxLeftIndex]
@@ -274,3 +332,69 @@ def boundingBox(P):
     topLine = [maxUp, [maxUp[0] + 1, maxUp[1]]]
     botLine = [maxDown, [maxDown[0] + 1, maxDown[1]]]
     return [lineIntersection(rightLine, topLine), lineIntersection(topLine, leftLine), lineIntersection(leftLine, botLine), lineIntersection(botLine, rightLine)]
+
+def convexHullPointsBF(P):
+    L = deepcopy(P)
+    for triangle in Combinations(P,3):
+        elim = []
+        for point in L:
+            if point not in triangle and inTriangle(point, triangle):
+                elim.append(point)
+        L = [x for x in L if x not in elim]
+    return angularSort(L, midPoint(L[0], L[1]))
+
+def convexHullEdgesBF(P):
+    L = deepcopy(P)
+    result = []
+    for edge in Combinations(P, 2):
+        i = 1
+        filteredList = [x for x in L if x not in edge]
+        orien = orientation(edge[0], edge[1], filteredList[0])
+        allValid = True
+        while i < len(filteredList) and allValid:
+            allValid = orien != 0 and orien == orientation(edge[0], edge[1], filteredList[i])
+            orien = orientation(edge[0], edge[1], filteredList[i])
+            i+= 1
+        if allValid:
+            if edge[0] not in result:
+                result.append(edge[0])
+            if edge[1] not in result:
+                result.append(edge[1])
+    return angularSort(result, midPoint(L[0], L[1]))
+
+def graham(P):
+    minPoint = min(P)
+    L = angularSort(P, minPoint)
+    i = 0
+    while i < len(L):
+        orien = orientation(L[i-2], L[i-1], L[i])
+        if orien < 0:
+            L.pop(i-1)
+            i -= 1
+        else:
+            i+=1
+    return L
+
+def jarvis(P):
+    minPoint = min(P)
+    L = angularSort(P, minPoint)
+    
+    exit = False
+    hull = [minPoint]
+    lastHullPoint = minPoint
+    
+    while not exit:
+        pivot = L[1] if L[0] == lastHullPoint else L[0]
+        
+        for point in L:
+            orient = orientation(lastHullPoint, pivot, point)
+            if orient == -1:
+                pivot = point
+                
+        if pivot == minPoint:
+            exit = True
+        else:
+            lastHullPoint = pivot
+            hull.append(pivot)
+            
+    return hull
