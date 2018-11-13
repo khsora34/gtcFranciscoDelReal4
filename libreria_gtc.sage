@@ -20,23 +20,43 @@ def midPoint(A,B):
 def inSegment(P,s):
     maxX = 0 if s[0][0] >= s[1][0] else 1
     maxY = 0 if s[0][1] >= s[1][1] else 1
-    if P[0] >= s[maxX-1][0] and P[0] <= s[maxX][0] and P[1] >= s[maxY-1][1] and P[1] <= s[maxY][1] and sarea(s[0],s[1],P) == 0:
-        return 1
+    if P[0] >= s[maxX-1][0] and P[0] <= s[maxX][0] and P[1] >= s[maxY-1][1] and P[1] <= s[maxY][1]:
+        return True if sarea(s[0],s[1],P) == 0 else False 
+    else:
+        return False
+
+def inSegmentNumbers(P,s):
+    maxX = 0 if s[0][0] >= s[1][0] else 1
+    maxY = 0 if s[0][1] >= s[1][1] else 1
+    if P[0] >= s[maxX-1][0] and P[0] <= s[maxX][0] and P[1] >= s[maxY-1][1] and P[1] <= s[maxY][1]:
+        return 1 if sarea(s[0],s[1],P) == 0 else 0 
     else:
         return 0
 
 def inTriangle(P,t):
+    orion = sum(orientation(t[i-1], t[i], P) for i in range(len(t)))
+    if orion == 3 or orion == -3:
+        return True
+    else:
+        i = 0
+        inSeg = 0
+        while i < len(t) and not inSeg:
+            inSeg = inSegment(P,[t[i-1],t[i]])
+            i+=1
+        return inSeg
+
+def inTriangleNumbers(P,t):
     orion = 0
     for i in range(len(t)):
-        orion += orientation(t[i-1], t[i], P)
+       orion += orientation(t[i-1], t[i], P)
     if orion == 3 or orion == -3:
         return 1
     else:
-        j = 0
+        i = 0
         inSeg = 0
-        while j < len(t) and inSeg != 1:
-            inSeg = inSegment(P,[t[j-1],t[j]])
-            j+=1
+        while i < len(t) and inSeg != 1:
+            inSeg = inSegmentNumbers(P,[t[i-1],t[i]])
+            i+=1
         return 1 if inSeg == 1 else 0
 
 def segmentIntersectionTest(a,b):
@@ -86,11 +106,12 @@ def circumcenter(a,b,c):
     return lineIntersection([vmab,[vmab[1], -vmab[0]]], [vmbc,[vmbc[1], -vmbc[0]]]) 
 
 def inCircle(a,b,c,d):
-    if inTriangle(d, [a,b,c]) == 1:
+    if inTriangle(d, [a,b,c]):
         return 1
     center = circumcenter(a,b,c)
     if center == []:
-        return
+        print("NO CENTER")
+        return -2
     radio = dist2(center, a)
     distanceD = dist2(center, d)
     if distanceD > radio:
@@ -98,7 +119,10 @@ def inCircle(a,b,c,d):
     elif distanceD == radio:
         return 0
     else:
-        return 1 
+        return 1
+
+def generatePoints(n):
+    return [[random(), random()] for i in range(n)]
 
 def maxAbcisa(P):
     indice = 0
@@ -376,25 +400,17 @@ def graham(P):
     return L
 
 def jarvis(P):
-    minPoint = min(P)
-    L = angularSort(P, minPoint)
-    
-    exit = False
-    hull = [minPoint]
-    lastHullPoint = minPoint
-    
-    while not exit:
-        pivot = L[1] if L[0] == lastHullPoint else L[0]
-        
-        for point in L:
-            orient = orientation(lastHullPoint, pivot, point)
-            if orient == -1:
+    initial = min(P)
+    hull = [initial]
+    nextOneIsInitial = False
+    lastHullPoint = initial
+    while not nextOneIsInitial:
+        pivot = P[0] if lastHullPoint != P[0] else P[1]
+        for point in P:
+            if sarea(lastHullPoint, pivot, point) < 0:
                 pivot = point
-                
-        if pivot == minPoint:
-            exit = True
-        else:
-            lastHullPoint = pivot
+        lastHullPoint = pivot
+        nextOneIsInitial = lastHullPoint == initial
+        if not nextOneIsInitial:
             hull.append(pivot)
-            
     return hull
