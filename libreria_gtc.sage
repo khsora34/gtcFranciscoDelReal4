@@ -89,7 +89,7 @@ def lineIntersection(r,s):
     deter = ((y2 - y1) * (x12 - x22)) - ((x1 - x2) * (y22 - y12))
     if deter == 0:
     #Las rectas son paralelas o coincidentes.
-        return
+        return []
     p = x1 * (y2 - y1) - y1 * (x2 - x1)
     q = x12 * (y22 - y12) - y12 * (x22 - x12)
     x = (p * (x12 - x22) - q * (x1 - x2)) / (deter)
