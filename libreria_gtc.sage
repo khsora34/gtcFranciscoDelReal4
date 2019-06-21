@@ -21,7 +21,7 @@ def inSegment(P,s):
     maxX = 0 if s[0][0] >= s[1][0] else 1
     maxY = 0 if s[0][1] >= s[1][1] else 1
     if P[0] >= s[maxX-1][0] and P[0] <= s[maxX][0] and P[1] >= s[maxY-1][1] and P[1] <= s[maxY][1]:
-        return True if sarea(s[0],s[1],P) == 0 else False 
+        return True if sarea(s[0],s[1],P) == 0 else False
     else:
         return False
 
@@ -29,7 +29,7 @@ def inSegmentNumbers(P,s):
     maxX = 0 if s[0][0] >= s[1][0] else 1
     maxY = 0 if s[0][1] >= s[1][1] else 1
     if P[0] >= s[maxX-1][0] and P[0] <= s[maxX][0] and P[1] >= s[maxY-1][1] and P[1] <= s[maxY][1]:
-        return 1 if sarea(s[0],s[1],P) == 0 else 0 
+        return 1 if sarea(s[0],s[1],P) == 0 else 0
     else:
         return 0
 
@@ -94,7 +94,7 @@ def lineIntersection(r,s):
     q = x12 * (y22 - y12) - y12 * (x22 - x12)
     x = (p * (x12 - x22) - q * (x1 - x2)) / (deter)
     y = (q * (y2 - y1) - p * (y22 - y12)) / (deter)
-    return [x,y] 
+    return [x,y]
 
 def circumcenter(a,b,c):
     if sarea(a,b,c) == 0:
@@ -103,7 +103,7 @@ def circumcenter(a,b,c):
     mbc = midPoint(b,c)
     vmab = [b[0]-a[0], b[1]-a[1]]
     vmbc = [c[0]-b[0],c[1]-b[1]]
-    return lineIntersection([vmab,[vmab[1], -vmab[0]]], [vmbc,[vmbc[1], -vmbc[0]]]) 
+    return lineIntersection([vmab,[vmab[1], -vmab[0]]], [vmbc,[vmbc[1], -vmbc[0]]])
 
 def inCircle(a,b,c,d):
     if inTriangle(d, [a,b,c]):
@@ -263,9 +263,9 @@ def angularSort(l, p):
             return int(-1)
         elif distanceY > distanceX:
             return int(1)
-        else: 
+        else:
             return int(1) if x == p else int(-1)
-        
+
     return sorted(l,cmp = compare)
 
 def splitAnyDirectionList(v,P):
@@ -295,7 +295,7 @@ def polygonization(p):
             return int(1)
         else:
             return int(-1)
-            
+
     distributedPoints = splitHorizList(p)
     orderedList1 = sorted(distributedPoints[0], cmp= greaterX)
     orderedList2 = sorted(distributedPoints[1], cmp= greaterX)
@@ -342,7 +342,6 @@ def kernel(p):
     C=deepcopy(p)
     for i in range(len(p)):
         C=clipping(C,[p[i-1],p[i]])
-
     return C
 
 def boundingBox(P):
@@ -350,7 +349,7 @@ def boundingBox(P):
     maxLeftIndex = minAbcisa(P); maxLeft = P[maxLeftIndex]
     maxUpIndex = maxOrdenada(P); maxUp = P[maxUpIndex]
     maxDownIndex = minOrdenada(P); maxDown = P[maxDownIndex]
-    
+
     rightLine = [maxRight, [maxRight[0], maxRight[1] + 1]]
     leftLine = [maxLeft, [maxLeft[0], maxLeft[1] + 1]]
     topLine = [maxUp, [maxUp[0] + 1, maxUp[1]]]
@@ -414,3 +413,124 @@ def jarvis(P):
         if not nextOneIsInitial:
             hull.append(pivot)
     return hull
+
+# funcion que crea un DCEL, para un poligono
+def dcel(P):
+    n=len(P)
+    V=[[P[i],i] for i in range(len(P))]
+    e=[[i,n+i,(i-1)%n,(i+1)%n,1]for i in range(n)]+[[(i+1)%n,i,n+(i+1)%n,n+(i-1)%n,0]for i in range(n)]
+    f=[n,0]
+    return [V,e,f]
+
+# funciones para referirse a los elementos asociados a un elemento del DCEL
+
+# indice del origen de una arista e
+def origin(e,D):
+    return D[1][e][0]
+
+# coordenadas del origen de la arista e
+def originCoords(e,D):
+    return D[0][origin(e,D)][0]
+
+# arista gemela de la arista e
+def twin(e,D):
+    return D[1][e][1]
+
+# arista previa de la arista e
+def prev(e,D):
+    return D[1][e][2]
+
+# arista siguiente de la arista e
+def next(e,D):
+    return D[1][e][3]
+
+# indice de la cara de cuyo borde forma parte la arista e
+def face(e,D):
+    return D[1][e][4]
+
+# indice de una de las aristas del borde de la cara c
+def edge(c,D):
+    return D[2][c]
+
+# funcion para dibujar las aristas de un DCEL
+
+def plotDCEL(D):
+    return sum(line([originCoords(i,D),originCoords(twin(i,D),D)],aspect_ratio=1) for i in range(len(D[1])))
+
+# funcion para colorear una cara de un DCEL
+
+def plotFace(c,D,col):
+    f=D[2][c]
+    C=[f]
+    f=next(f,D)
+    while f <> C[0]:
+        C.append(f)
+        f=next(f,D)
+
+    P=[originCoords(j,D) for j in C]
+    return polygon(P,color=col, alpha=.5)
+
+# funcion para colorear las caras de un DCEL
+def colorDCEL(D):
+    return sum(plotFace(i,D,(random(),random(),random())) for i in range(1,len(D[2])))
+
+# funcion para dividir una cara del DCEL D por una diagonal
+# e1 y e2 son las aristas cuyos orígenes son los extremos de la diagonal que divide la cara
+def splitFace(e1,e2,D):
+    # si no son aristas de la misma cara o si son adyacentes sus origenes no definen una diagonal
+    if face(e1,D) <> face(e2,D) or origin(e2,D) == origin(twin(e1,D),D) or origin(e1,D) == origin(twin(e2,D),D):
+        print "no diagonal"
+        return
+
+    nv, ne, nf = len(D[0]), len(D[1]), len(D[2])
+    preve1 = prev(e1,D)
+    preve2 = prev(e2,D)
+    k=face(e1,D)
+
+    # añadimos las aristas nuevas
+    D[1].append([origin(e1,D),ne+1,preve1,e2,k])
+    D[1].append([origin(e2,D),ne,preve2,e1,nf])
+
+    # modificamos aristas afectadas
+    D[1][preve1][3]=ne
+    D[1][e1][2]=ne+1
+    D[1][preve2][3]=ne+1
+    D[1][e2][2]=ne
+    i=e1
+    while i<>ne+1:
+        D[1][i][4]=nf
+        i=next(i,D)
+
+    #modificamos la cara afectada
+    D[2][k]=ne
+
+    # añadimos la nueva cara
+    D[2].append(ne+1)
+
+def faceEdges(c, D):
+    last = edge(c,D)
+    list = []
+    while last not in list:
+        list.append(last)
+        last = next(last,D)
+    return list
+
+def faceVertices(c, D):
+    vertices = []
+    for edge in faceEdges(c, D):
+        vertices.append(origin(edge, D))
+    return vertices
+
+def faceVerticesCoords(c,D):
+    vertices = []
+    for edge in faceEdges(c, D):
+        vertices.append(originCoords(edge, D))
+    return vertices
+
+def faceNeighbors(c,D):
+    faces = []
+    for edge in faceEdges(c, D):
+        newFace = face(twin(edge, D), D)
+        if newFace not in faces:
+            faces.append(newFace)
+    return faces
