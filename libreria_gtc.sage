@@ -309,6 +309,12 @@ def starPolygonization(p):
     #rotationalCenter = circumcenter(p[0], p[1], p[2])
     return angularSort(p, rotationalCenter)
 
+def minPolygonization(p):
+    if len(p) < 3:
+        return
+    rotationalCenterIndex = minAbcisa(p)
+    return angularSort(p, p[rotationalCenterIndex])
+
 def clipping(P,r):
     result = []
     if P == []:
@@ -528,7 +534,7 @@ def earTestDCEL(edgesList, edge, D):
 # funcion para buscar una diagonal en una cara acotada de un DCEL
 
 def diagonalDCEL(c,D):
-    edgesList = edges(c, D)
+    edgesList = faceEdges(c, D)
 
     if len(edgesList) == 3:
         return []
@@ -569,15 +575,25 @@ def diagonalDCEL(c,D):
     return [chosenFirstEdge, chosenSecondEdge]
 
 # funcion para triangular las caras de un DCEL
-
 def triangulateDCEL(D):
     i = 0
     while i < len(D[2]):
         possibleDiagonal = diagonalDCEL(i, D)
-        if possibleDiagonal == []:
+        if possibleDiagonal == [] or possibleDiagonal == [-1, -1]:
             i+=1
         else:
             splitFace(possibleDiagonal[0], possibleDiagonal[1], D)
+
+def simpleTriangulateDCEL(D):
+    indexMin = minAbcisa(faceVerticesCoords(len(D[2])-1, D))
+    firstEdge = D[0][indexMin][1]
+    i = len(D[0]) - 1
+    while i > 0:
+        second = next(next(firstEdge, D), D)
+        if D[1][second][0] <> D[1][D[1][firstEdge][1]][0] and D[1][firstEdge][0] <> D[1][D[1][second][1]][0]:
+            splitFace(second, firstEdge, D)
+        firstEdge = D[2][-1]
+        i-=1
 
 def faceEdges(c, D):
     last = edge(c,D)
