@@ -507,6 +507,78 @@ def splitFace(e1,e2,D):
     # añadimos la nueva cara
     D[2].append(ne+1)
 
+def earTestDCEL(edgesList, edge, D):
+    n = len(edgesList)
+    if sarea(originCoords(prev(edge, D), D), originCoords(edge, D), originCoords(next(edge, D), D)) <= 0:
+        return False
+
+    notInTriangle = True
+    j = 0
+    while notInTriangle and j < n:
+        if (edgesList[j] == prev(edge, D)):
+            j += 2
+        elif edgesList[j] == edge:
+            j += 1
+        else:
+            notInTriangle = not inTriangle(originCoords(edgesList[j], D), [originCoords(prev(edge, D), D), originCoords(edge, D), originCoords(next(edge, D), D)])
+
+        j += 1
+    return notInTriangle
+
+# funcion para buscar una diagonal en una cara acotada de un DCEL
+
+def diagonalDCEL(c,D):
+    edgesList = edges(c, D)
+
+    if len(edgesList) == 3:
+        return []
+
+    actualEdge = edge(c, D)
+
+    n = len(edgesList)
+    chosenFirstEdge = -1
+    chosenSecondEdge = -1
+    chosenArea = oo
+
+    i = 0
+    while i < n and chosenFirstEdge == chosenSecondEdge:
+        point1 = originCoords(prev(actualEdge, D), D)
+        point2 = originCoords(actualEdge, D)
+        point3 = originCoords(next(actualEdge, D), D)
+
+        if sarea(point1, point2, point3) > 0:
+            if earTestDCEL(edgesList, actualEdge, D):
+                chosenFirstEdge = prev(actualEdge, D)
+                chosenSecondEdge = next(actualEdge, D)
+                continue
+            for j in range(n):
+                if edgesList[j] in [prev(actualEdge, D), actualEdge, next(actualEdge, D)]:
+                    continue
+                calculatedArea = sarea(point1, point3, originCoords(next(edgesList[j], D), D))
+                if calculatedArea > 0 and chosenArea > calculatedArea:
+                    chosenFirstEdge = actualEdge
+                    chosenSecondEdge = edgesList[j]
+                    chosenArea = calculatedArea
+                elif calculatedArea < chosenArea:
+                    chosenFirstEdge = actualEdge
+                    chosenSecondEdge = edgesList[j]
+                    chosenArea = calculatedArea
+        i+=1
+        actualEdge = next(actualEdge, D)
+
+    return [chosenFirstEdge, chosenSecondEdge]
+
+# funcion para triangular las caras de un DCEL
+
+def triangulateDCEL(D):
+    i = 0
+    while i < len(D[2]):
+        possibleDiagonal = diagonalDCEL(i, D)
+        if possibleDiagonal == []:
+            i+=1
+        else:
+            splitFace(possibleDiagonal[0], possibleDiagonal[1], D)
+
 def faceEdges(c, D):
     last = edge(c,D)
     list = []
