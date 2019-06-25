@@ -101,9 +101,13 @@ def circumcenter(a,b,c):
         return []
     mab = midPoint(a,b)
     mbc = midPoint(b,c)
-    vmab = [b[0]-a[0], b[1]-a[1]]
-    vmbc = [c[0]-b[0],c[1]-b[1]]
-    return lineIntersection([vmab,[vmab[1], -vmab[0]]], [vmbc,[vmbc[1], -vmbc[0]]])
+    vectorAB = [b[0]-a[0], b[1]-a[1]]
+    vectorBC = [c[0]-b[0], c[1]-b[1]]
+    perpAB = [vectorAB[1], -vectorAB[0]]
+    perpBC = [vectorBC[1], -vectorBC[0]]
+    pointInDirectionAB = [mab[0] + perpAB[0], mab[1] + perpAB[1]]
+    pointInDirectionBC = [mbc[0] + perpBC[0], mbc[1] + perpBC[1]]
+    return lineIntersection([mab, pointInDirectionAB], [mbc, pointInDirectionBC])
 
 def inCircle(a,b,c,d):
     if inTriangle(d, [a,b,c]):
@@ -120,6 +124,9 @@ def inCircle(a,b,c,d):
         return 0
     else:
         return 1
+
+def inCircleTest(a,b,c,d):
+    return inCircle(a,b,c,d) > 0
 
 def generatePoints(n):
     return [[random(), random()] for i in range(n)]
@@ -645,10 +652,37 @@ def convexHullDCEL(D):
             i += 1
 
 def triangulation(p):
-    dcel3 = dcel(p)
+    dcel3 = dcel(minPolygonization(p))
     print("creado")
     simpleTriangulateDCEL(dcel3)
     print("triangulado")
     convexHullDCEL(dcel3)
     print("cerrando")
     return dcel3
+
+def flip(a,D):
+    oa=D[1][a][0]
+    ga=D[1][a][1]
+    ca=D[1][a][4]
+    aa=D[1][a][2]
+    pa=D[1][a][3]
+    cb=D[1][ga][4]
+    ab=D[1][ga][2]
+    pb=D[1][ga][3]
+    oga=D[1][ga][0]
+    D[1][a]=[D[1][aa][0],ga,pa,ab,ca]
+    D[1][ga]=[D[1][ab][0],a,pb,aa,cb]
+    D[1][pa][2]=ab
+    D[1][pa][3]=a
+    D[1][aa][2]=ga
+    D[1][aa][3]=pb
+    D[1][aa][4]=cb
+    D[1][pb][2]=aa
+    D[1][pb][3]=ga
+    D[1][ab][2]=a
+    D[1][ab][3]=pa
+    D[1][ab][4]=ca
+    D[2][ca]=a
+    D[2][cb]=ga
+    D[0][oa][1]=pb
+    D[0][oga][1]=pa
