@@ -622,3 +622,33 @@ def faceNeighbors(c,D):
         if newFace not in faces:
             faces.append(newFace)
     return faces
+
+def convexHullDCEL(D):
+    actualEdge = edge(0, D)
+    first = next(actualEdge, D)
+    second = next(first, D)
+    lonExtFace = len(D[0])
+    i = 0
+    while i <= lonExtFace:
+        orient = orientation(originCoords(actualEdge, D), originCoords(first, D), originCoords(second, D))
+        if orient > 0:
+            splitFace(actualEdge, second, D)
+            actualEdge = prev(len(D[1])-2, D)
+            first = next(actualEdge, D)
+            second = next(first, D)
+            i -= 1
+            lonExtFace -= 1
+        else:
+            actualEdge = first
+            first = second
+            second = next(first, D)
+            i += 1
+
+def triangulation(p):
+    dcel3 = dcel(p)
+    print("creado")
+    simpleTriangulateDCEL(dcel3)
+    print("triangulado")
+    convexHullDCEL(dcel3)
+    print("cerrando")
+    return dcel3
