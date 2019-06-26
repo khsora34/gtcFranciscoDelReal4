@@ -630,6 +630,69 @@ def faceNeighbors(c,D):
             faces.append(newFace)
     return faces
 
+def vertexEdgesPoint(v,D):
+    vertexList = D[0]
+
+    # Search for vertex edge.
+    searching = true
+    firstEdge = None
+    i = 0
+    while (i < len(vertexList)) and searching:
+        if vertexList[i][0] == v:
+            firstEdge = vertexList[i][1]
+            searching = false
+        i+=1
+
+    if firstEdge == None: return []
+
+    lastEdge = twin(prev(firstEdge, D), D)
+    twins = [lastEdge]
+    while lastEdge != firstEdge:
+        lastEdge = twin(prev(lastEdge, D), D)
+        twins.append(lastEdge)
+
+    return twins
+
+def vertexEdges(v,D):
+    firstEdge = D[0][v][1]
+    lastEdge = twin(prev(firstEdge, D), D)
+    twins = [firstEdge]
+    while lastEdge != firstEdge:
+        twins.append(lastEdge)
+        lastEdge = twin(prev(lastEdge, D), D)
+
+    return twins
+
+def vertexFanPoint(v,D):
+    vertexList = D[0]
+
+    # Search for vertex edge.
+    searching = true
+    firstEdge = None
+    i = 0
+    while (i < len(vertexList)) and searching:
+        if vertexList[i][0] == v:
+            firstEdge = vertexList[i][1]
+            searching = false
+        i+=1
+
+    lastEdge = twin(prev(firstEdge, D), D)
+    twins = [face(lastEdge, D)]
+    while lastEdge != firstEdge:
+        lastEdge = twin(prev(lastEdge, D), D)
+        twins.append(face(lastEdge, D))
+    return twins
+
+def vertexFan(v,D):
+    firstEdge = D[0][v][1]
+    lastEdge = twin(prev(firstEdge, D), D)
+    twins = [face(lastEdge, D)]
+    while lastEdge != firstEdge:
+        lastEdge = twin(prev(lastEdge, D), D)
+        twins.append(face(lastEdge, D))
+
+    return twins
+
 def convexHullDCEL(D):
     actualEdge = edge(0, D)
     first = next(actualEdge, D)
@@ -686,3 +749,49 @@ def flip(a,D):
     D[2][cb]=ga
     D[0][oa][1]=pb
     D[0][oga][1]=pa
+
+def flipable(e, D):
+    return face(e, D) <> 0 and face(twin(e, D), D) <> 0
+
+def isLegal(e, D):
+    firstVertexEdge = e
+    secondVertexEdge = twin(e, D)
+    externalEdge1 = prev(firstVertexEdge, D)
+    externalEdge2 = prev(secondVertexEdge, D)
+    return not inCircleTest(originCoords(firstVertexEdge,D), originCoords(secondVertexEdge,D), originCoords(externalEdge1,D), originCoords(externalEdge2,D))
+
+def legalize(T):
+    i = 0
+    while i < len(T[1]):
+        if flipable(i, T) and not isLegal(i, T):
+            flip(i, T)
+            i = 0
+        else:
+            i+= 1
+
+def delone(p):
+    newDcel = triangulation(p)
+    legalize(newDcel)
+    return newDcel
+
+def voronoiRegion(v,D):
+    centers = []
+    vertexEdgesList = vertexEdges(v, D)
+    for selectedEdge in vertexEdgesList:
+        if face(selectedEdge, D) == 0:
+            newVertex = getNewPoint(selectedEdge, True, D)
+            centers.append(newVertex)
+        elif face(twin(selectedEdge, D), D) == 0:
+            newVertex = getNewPoint(selectedEdge, False, D)
+            centers.append(newVertex)
+            centers.append(circumcenter(originCoords(selectedEdge, D), originCoords(prev(selectedEdge,D), D), originCoords(next(selectedEdge, D), D)))
+        else:
+            centers.append(circumcenter(originCoords(selectedEdge, D), originCoords(prev(selectedEdge, D), D), originCoords(next(selectedEdge, D), D)))
+    return centers
+
+def voronoi(p):
+    newDcel = delone(p)
+    lines = []
+    for point in range(len(newDcel[0])):
+        lines.append(voronoiRegion(point, newDcel))
+    return lines
