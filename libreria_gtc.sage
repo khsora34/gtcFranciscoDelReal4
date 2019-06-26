@@ -70,7 +70,8 @@ def getYFrom(line,x):
 
 def falseLineIntersection(r,s):
     if not segmentIntersectionTest(r,s):
-        return "Estas dos rectas no intersecan"
+        print("Estas dos rectas no intersecan")
+        return []
     rGradient = gradient(r)
     sGradient = gradient(s)
     commonX = (rGradient*r[0][0]-sGradient*s[0][0] + s[0][1] - r[0][1])/(rGradient-sGradient)
@@ -714,8 +715,8 @@ def convexHullDCEL(D):
             second = next(first, D)
             i += 1
 
-def triangulation(p):
-    dcel3 = dcel(minPolygonization(p))
+def triangulationDCEL2(p):
+    dcel3 = dcel(p)
     print("creado")
     simpleTriangulateDCEL(dcel3)
     print("triangulado")
